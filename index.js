@@ -7,3 +7,7 @@ client.on("ready", () => {
 // HAI
 
 client.login(process.env.DISCORD_TOKEN);
+
+export default function handler(req, res) {
+  res.status(200).end("Hello Bot");
+}
