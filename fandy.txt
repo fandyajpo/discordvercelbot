@@ -1,0 +1,478 @@
+"use client";
+import { Variances } from "./variances";
+import Link from "next/link";
+import { useCallback, useMemo, useRef, useState, memo } from "react";
+import {
+  ProjectLotInterface,
+  ProjectStatus,
+} from "@arkasuryawan/m2-interfaces";
+import {
+  IconBathOutline,
+  IconBedOutline,
+  IconCarOutline,
+} from "../../../Icons";
+import { HtmlParser } from "../../../lib/HtmlParser";
+import { LotImageSlider } from "./image-slider";
+import Image from "next/image";
+import { useCtx } from "../../../lib/Context";
+import { ProjectPrice } from "../../../common/project/project-price";
+interface Props {
+  lot: ProjectLotInterface;
+}
+
+interface LotOption {
+  id: string;
+  varianceId?: string;
+}
+
+const Status = ({ status }: { status: ProjectStatus }) => {
+  let backgroundColor = "";
+
+  switch (status) {
+    case "AVAILABLE":
+      backgroundColor = "bg-green-500";
+
+      break;
+
+    case "BOOKED":
+      backgroundColor = "bg-blue-500";
+
+      break;
+
+    case "CONTRACT":
+      backgroundColor = "bg-yellow-500";
+
+      break;
+
+    case "DELETED":
+      backgroundColor = "bg-red-500";
+
+      break;
+
+    case "DRAFT":
+      backgroundColor = "bg-gray-500";
+
+      break;
+
+    case "HOLD":
+      backgroundColor = "bg-orange-500";
+
+      break;
+
+    case "LEASED":
+      backgroundColor = "bg-purple-500";
+
+      break;
+
+    case "NOTAVAILABLE":
+      backgroundColor = "bg-gray-500";
+
+      break;
+
+    case "PARTIAL":
+      backgroundColor = "bg-indigo-500";
+
+      break;
+
+    case "SOLD":
+      backgroundColor = "bg-red-500";
+
+      break;
+
+    default:
+      backgroundColor = "bg-gray-500";
+
+      break;
+  }
+
+  return (
+    <div
+      className={`w-full  md:w-12 h-full md:h-72 rounded-t-xl md:rounded-l-xl md:rounded-r-none ${backgroundColor} flex items-center justify-center`}
+    >
+      <p className={`md:-rotate-90 font-semibold text-white`}>{status}</p>
+    </div>
+  );
+};
+
+const StatusMini = ({ status }: { status: ProjectStatus }) => {
+  let backgroundColor = "";
+
+  switch (status) {
+    case "AVAILABLE":
+      backgroundColor = "bg-green-500";
+
+      break;
+
+    case "BOOKED":
+      backgroundColor = "bg-blue-500";
+
+      break;
+
+    case "CONTRACT":
+      backgroundColor = "bg-yellow-500";
+
+      break;
+
+    case "DELETED":
+      backgroundColor = "bg-red-500";
+
+      break;
+
+    case "DRAFT":
+      backgroundColor = "bg-gray-500";
+
+      break;
+
+    case "HOLD":
+      backgroundColor = "bg-orange-500";
+
+      break;
+
+    case "LEASED":
+      backgroundColor = "bg-purple-500";
+
+      break;
+
+    case "NOTAVAILABLE":
+      backgroundColor = "bg-gray-500";
+
+      break;
+
+    case "PARTIAL":
+      backgroundColor = "bg-indigo-500";
+
+      break;
+
+    case "SOLD":
+      backgroundColor = "bg-red-500";
+
+      break;
+
+    default:
+      backgroundColor = "bg-gray-500";
+
+      break;
+  }
+
+  return (
+    <div
+      className={`hidden md:block w-fit h-fit px-4 py-2 ${backgroundColor} flex items-center justify-center rounded-full`}
+    >
+      <p className={`font-semibold text-white`}>{status}</p>
+    </div>
+  );
+};
+
+export const LotCard = memo(({ lot }: Props) => {
+  const { state } = useCtx();
+  const [select, setSelect] = useState<LotOption>({ id: "", varianceId: "" });
+  const [read, setRead] = useState(false);
+  const readref = useRef<any>();
+  const ref = useRef<any>();
+  const modal = useRef<any>();
+
+  const [seeType, setSeeType] = useState(false);
+
+  const seeVariance = useCallback(() => {
+    return setSeeType((e: boolean) => !e);
+  }, []);
+
+  const readMore = useCallback(() => {
+    return setRead((e: boolean) => !e);
+  }, []);
+
+  const setId = useCallback((s: LotOption) => {
+    modal.current.click();
+    return setSelect({ id: s.id, varianceId: s.varianceId });
+  }, []);
+
+  const price = useMemo(
+    () =>
+      lot && lot.project && lot.project.preSaleType === "Fix Price"
+        ? lot.project.preSalePrice
+        : lot.project.preSalePercentage! * lot.price!,
+    []
+  );
+
+  return (
+    <>
+      <input
+        type="checkbox"
+        ref={modal}
+        id="modalreserve"
+        className="modal-toggle"
+      />
+      {/*  */}
+      <div className="modal">
+        <div className="modal-box bg-white">
+          <h3 className="font-bold text-lg text-gray-800">Secure Yours Now</h3>
+          <p>Pay your holding deposit now to take this unit off the market</p>
+          <div className="modal-action">
+            <label
+              htmlFor="modalreserve"
+              className="btn btn-success text-white"
+            >
+              <Link
+                href={`/check-out?id=${select?.id}`}
+                className="btn btn-success text-white"
+              >
+                Reserve Now
+              </Link>
+            </label>
+            <button
+              onClick={() => modal.current.click()}
+              className="btn btn-error text-white"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="md:flex md:flex-row h-auto border border-gray-300 rounded-xl overflow-hidden shadow-xl">
+        <Status status={lot?.status as ProjectStatus} />
+        <div className="w-full h-auto md:h-auto bg-white relative grid grid-cols-1 md:grid-cols-3">
+          <div
+            className="w-full md:w-full h-72 relative "
+            style={{
+              objectFit: "cover",
+            }}
+          >
+            {lot.interior?.length < 2 ? (
+              <Image
+                src={lot?.interior?.[0]}
+                fill
+                className=""
+                style={{
+                  objectFit: "cover",
+                }}
+                alt=""
+              />
+            ) : (
+              // @ts-ignore
+              <LotImageSlider image={lot?.interior} />
+            )}
+          </div>
+          <div className="w-auto h-auto bg-white p-4 relative mt-4 md:mt-0 gap-y-2">
+            <p>
+              {lot?.bed} Bedrooms, {lot?.bath} Bathrooms
+            </p>
+            <p>
+              Lot/Unit: {lot.lot} - Level {lot.level}
+            </p>
+            <hr />
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-2  absolute md:relative -top-10 md:-top-full bg-white p-2 shadow-md md:shadow-none rounded-xl ">
+                <div className="flex gap-2 m-0">
+                  <IconBedOutline /> {lot.bed}
+                </div>
+                <div className="flex gap-2">
+                  <IconBathOutline /> {lot.bath}
+                </div>
+                <div className="flex gap-2">
+                  <IconCarOutline /> {lot.garage}
+                </div>
+                <div className="flex gap-2">
+                  <IconCarOutline /> {lot.garage}
+                </div>
+              </div>
+            </div>
+            <hr />
+            <p>Aspect: {lot.aspect}</p>
+            <p>Type: Wait</p>
+
+            <div
+              className={`w-full overflow-hidden duration-500`}
+              style={{
+                height: read ? readref?.current?.scrollHeight : 20,
+              }}
+              ref={readref}
+            >
+              <HtmlParser className="" data={lot?.shortDescription} />
+            </div>
+            <div className="w-full">
+              <button
+                onClick={readMore}
+                className={`text-green-500 absolute bottom-0  duration-200 ${
+                  read
+                    ? ""
+                    : "bg-gradient-to-t from-white to-transparent rounded-xl text-xs"
+                } m-0 md:relative md:border-none`}
+              >
+                {read ? "Read less" : "Read more"}
+              </button>
+            </div>
+          </div>
+          <div className="w-full h-auto bg-white flex flex-col justify-center items-center gap-2">
+            <StatusMini status={lot?.status as ProjectStatus} />
+
+            {lot.status !== "SOLD" ? (
+              <>
+                <p className="text-black font-semibold">
+                  {ProjectPrice({
+                    clientCurencyCode: state.curencyCode!,
+                    projectPrice: lot?.price,
+                    projectCurencyCode: lot?.project.currency,
+                    currencyData: state.currencyData,
+                  })}
+                </p>
+                <p className="text-xs text-black">
+                  Book a Pre-Sale{" "}
+                  <span className="text-green-500 font-semibold">
+                    {ProjectPrice({
+                      clientCurencyCode: state!.curencyCode!,
+                      currencyData: state.currencyData,
+                      projectCurencyCode: lot.project.currency,
+                      projectPrice: price ? price : 1000,
+                    })}
+                  </span>
+                </p>
+                {/* @ts-ignore */}
+                <div className="p-4">
+                  {/* @ts-ignore */}
+                  {lot?.variances?.length < 1 ? (
+                    <button
+                      onClick={() => setId({ id: lot?._id, varianceId: "" })}
+                      className="btn btn-warning btn-sm text-xs"
+                    >
+                      Secure yours now
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-warning btn-sm text-xs"
+                      onClick={seeVariance}
+                    >
+                      Fractional Ownership
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+      <div
+        className="space-y-2 px-4 h-0 overflow-hidden duration-500"
+        style={{
+          height: seeType ? ref?.current?.scrollHeight : 0,
+        }}
+        ref={ref}
+      >
+        {/* @ts-ignore */}
+        {lot?.variances?.length > 0 &&
+          // @ts-ignore
+          lot?.variances?.map((data, num) => {
+            // @ts-ignore
+            return (
+              <>
+                <Variances setId={setId} key={num} variance={data} lot={lot} />
+              </>
+            );
+          })}
+      </div>
+    </>
+  );
+});
+
+LotCard.displayName = "LotCard";
+
+
+//===
+
+"use client";
+import { useCtx } from "../../../lib/Context";
+import { memo } from "react";
+import {
+  LotVariancesInterface,
+  ProjectInterface,
+} from "@arkasuryawan/m2-interfaces";
+import {
+  IconBedOutline,
+  IconBathOutline,
+  IconCarOutline,
+} from "../../../Icons";
+import { ProjectPrice } from "../../../common/project/project-price";
+import Image from "next/image";
+interface Props {
+  variance: LotVariancesInterface;
+  lot: ProjectInterface;
+  setId: (s: string) => void;
+}
+
+export const Variances = memo(({ variance, setId, lot }: Props) => {
+  const { state } = useCtx();
+  return (
+    <>
+      <div className="h-auto flex flex-row border border-gray-300 shadow rounded-xl">
+        <Image
+          className="w-24 md:w-44 h-24 md:h-44 rounded-xl"
+          width={500}
+          height={500}
+          src={variance?.projectLotVariance?.interior?.[0]}
+          alt={variance?.projectLotVariance?.interior?.[0]}
+        />
+        <div
+          className={
+            "flex flex-col md:flex-row w-full justify-between divide-y"
+          }
+        >
+          <div className="p-2 w-auto text-gray-700 space-y-2">
+            <p>
+              {"25%"} Ownership - Courtyard View {"(THB 635,073)"}
+            </p>
+            <hr />
+            <div className="flex items-center gap-x-6">
+              <div className="flex items-center gap-2">
+                <IconBedOutline /> 1
+              </div>
+              <div className="flex items-center gap-2">
+                <IconBathOutline /> 1
+              </div>
+              <div className="flex items-center gap-2">
+                <IconCarOutline /> 1
+              </div>
+            </div>
+            <hr />
+            <div className="text-xs">
+              <p>***FOR NON AUSTRALIANS ONLY***</p>
+              <p>Type: Coutryard View</p>
+            </div>
+          </div>
+          <div className="w-64 h-auto flex items-center flex-col justify-center gap-x-4">
+            <p className="text-xl text-black">
+              {/* {JSON.stringify({
+                clientCurencyCode: state!.curencyCode!,
+                currencyData: state.currencyData,
+                projectCurencyCode: variance.price,
+                projectPrice: lot.summary?.minPrice,
+              })} */}
+              {ProjectPrice({
+                // infinity has no variance, this is just sample variance
+                clientCurencyCode: state!.curencyCode!,
+                currencyData: state.currencyData,
+                projectCurencyCode: variance.price ? variance.price : 1000,
+                projectPrice: lot.summary?.minPrice,
+              })}
+            </p>
+            {/* <button className="btn btn-warning btn-md text-sm">
+              Select Type
+            </button> */}
+            <button
+              // onClick={() =>
+              //   setId({
+              //     id: lot?._id,
+              //     varianceId: variance?.projectLotVarianceId,
+              //   })
+              // }
+              className="btn btn-warning btn-sm text-xs"
+            >
+              Secure yours now
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+});
+
+Variances.displayName = "Variances";
